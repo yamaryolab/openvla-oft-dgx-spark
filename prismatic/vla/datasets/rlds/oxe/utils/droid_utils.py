@@ -3,19 +3,64 @@
 from typing import Any, Dict
 
 import tensorflow as tf
-import tensorflow_graphics.geometry.transformation as tfg
+
+
+def _euler_xyz_to_rmat(euler_xyz: tf.Tensor) -> tf.Tensor:
+    roll = euler_xyz[..., 0]
+    pitch = euler_xyz[..., 1]
+    yaw = euler_xyz[..., 2]
+
+    cr = tf.cos(roll)
+    sr = tf.sin(roll)
+    cp = tf.cos(pitch)
+    sp = tf.sin(pitch)
+    cy = tf.cos(yaw)
+    sy = tf.sin(yaw)
+
+    r00 = cy * cp
+    r01 = cy * sp * sr - sy * cr
+    r02 = cy * sp * cr + sy * sr
+
+    r10 = sy * cp
+    r11 = sy * sp * sr + cy * cr
+    r12 = sy * sp * cr - cy * sr
+
+    r20 = -sp
+    r21 = cp * sr
+    r22 = cp * cr
+
+    row0 = tf.stack([r00, r01, r02], axis=-1)
+    row1 = tf.stack([r10, r11, r12], axis=-1)
+    row2 = tf.stack([r20, r21, r22], axis=-1)
+    return tf.stack([row0, row1, row2], axis=-2)
+
+
+def _rmat_to_euler_xyz(rmat: tf.Tensor) -> tf.Tensor:
+    # Inverse of _euler_xyz_to_rmat for the same convention.
+    # Shape: (..., 3, 3)
+    r20 = rmat[..., 2, 0]
+    r21 = rmat[..., 2, 1]
+    r22 = rmat[..., 2, 2]
+    r10 = rmat[..., 1, 0]
+    r00 = rmat[..., 0, 0]
+
+    pitch = tf.asin(tf.clip_by_value(-r20, -1.0, 1.0))
+    roll = tf.atan2(r21, r22)
+    yaw = tf.atan2(r10, r00)
+    return tf.stack([roll, pitch, yaw], axis=-1)
 
 
 def rmat_to_euler(rot_mat):
-    return tfg.euler.from_rotation_matrix(rot_mat)
+    return _rmat_to_euler_xyz(rot_mat)
 
 
 def euler_to_rmat(euler):
-    return tfg.rotation_matrix_3d.from_euler(euler)
+    return _euler_xyz_to_rmat(euler)
 
 
 def invert_rmat(rot_mat):
-    return tfg.rotation_matrix_3d.inverse(rot_mat)
+    # For valid rotation matrices: inverse == transpose.
+    return tf.linalg.matrix_transpose(rot_mat)
 
 
 def rotmat_to_rot6d(mat):

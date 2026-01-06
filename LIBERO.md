@@ -26,6 +26,9 @@ pip install -e LIBERO
 pip install -r experiments/robot/libero/libero_requirements.txt  # From openvla-oft base dir
 ```
 
+(Docker推奨) `SETUP.md` のDocker手順で `INSTALL_LIBERO=1` 付きでイメージを作っている場合、上記のclone/pip installはビルド時に完了しているため
+このステップはスキップできます。
+
 (Optional, if you plan to launch training) To download the [LIBERO datasets](https://huggingface.co/datasets/openvla/modified_libero_rlds) that we used in our fine-tuning
 experiments, run the command below. This will download the LIBERO-Spatial, LIBERO-Object, LIBERO-Goal,
 and LIBERO-10 datasets in RLDS data format (~10 GB total). You can use these to fine-tune OpenVLA or

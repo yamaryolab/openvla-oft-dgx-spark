@@ -41,26 +41,46 @@ dependencies = [
     "peft==0.11.1",
     "protobuf",
     "rich",
-    "sentencepiece==0.1.99",
-    "timm==0.9.10",
-    "tokenizers==0.19.1",
-    "torch==2.2.0",
-    "torchvision==0.17.0",
-    "torchaudio==2.2.0",
-    "transformers @ git+https://github.com/moojink/transformers-openvla-oft.git",  # IMPORTANT: Use this fork for bidirectional attn (for parallel decoding)
+    "sentencepiece>=0.2.0",
+    "timm>=0.9.10,<1.0.0",
+    "tqdm",
+    "requests",
+    "Pillow",
     "wandb",
-    "tensorflow==2.15.0",
-    "tensorflow_datasets==4.9.3",
-    "tensorflow_graphics==2021.12.3",
-    "dlimp @ git+https://github.com/moojink/dlimp_openvla",
     "diffusers==0.30.3",
     "imageio",
     "uvicorn",
     "fastapi",
-    "json-numpy",
 ]
 
 [project.optional-dependencies]
+torch = [
+    "torch",
+    "torchvision",
+    "torchaudio",
+]
+hf = [
+    "transformers==4.40.1",
+    "tokenizers==0.19.1",
+]
+hf_openvla_fork = [
+    # IMPORTANT: Use this fork for bidirectional attn (for parallel decoding), if it builds on your platform.
+    "transformers @ git+https://github.com/moojink/transformers-openvla-oft.git",
+    "tokenizers==0.19.1",
+]
+rlds = [
+    # RLDS dataloader + statistics rely on TensorFlow/TFDS; GPU is not required (CPU is fine).
+    # Note: TensorFlow generally constrains NumPy to < 2.0.
+    "numpy<2",
+    "tensorflow>=2.16",
+    "tensorflow_datasets>=4.9.3",
+]
+flash_attn = [
+    # Optional training speedup; may be difficult/unavailable on some aarch64 setups.
+    "packaging",
+    "ninja",
+    "flash-attn==2.5.5",
+]
 dev = [
     "black>=24.2.0",
     "gpustat",

@@ -418,7 +418,32 @@ def maniskill_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def furniture_bench_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
-    import tensorflow_graphics.geometry.transformation as tft
+    # Avoid tensorflow-graphics dependency (not available on many aarch64 / py312 setups).
+    # Convert quaternion (x, y, z, w) to Euler XYZ (roll, pitch, yaw) using pure TF ops.
+    def quat_to_euler_xyz(quat_xyzw: tf.Tensor) -> tf.Tensor:
+        x, y, z, w = (
+            quat_xyzw[:, 0],
+            quat_xyzw[:, 1],
+            quat_xyzw[:, 2],
+            quat_xyzw[:, 3],
+        )
+
+        # roll (x-axis rotation)
+        t0 = 2.0 * (w * x + y * z)
+        t1 = 1.0 - 2.0 * (x * x + y * y)
+        roll = tf.atan2(t0, t1)
+
+        # pitch (y-axis rotation)
+        t2 = 2.0 * (w * y - z * x)
+        t2 = tf.clip_by_value(t2, -1.0, 1.0)
+        pitch = tf.asin(t2)
+
+        # yaw (z-axis rotation)
+        t3 = 2.0 * (w * z + x * y)
+        t4 = 1.0 - 2.0 * (y * y + z * z)
+        yaw = tf.atan2(t3, t4)
+
+        return tf.stack([roll, pitch, yaw], axis=-1)
 
     trajectory["observation"]["state"] = tf.concat(
         (
@@ -432,7 +457,7 @@ def furniture_bench_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, A
     trajectory["action"] = tf.concat(
         (
             trajectory["action"][:, :3],
-            tft.euler.from_quaternion(trajectory["action"][:, 3:7]),
+            quat_to_euler_xyz(trajectory["action"][:, 3:7]),
             invert_gripper_actions(tf.clip_by_value(trajectory["action"][:, -1:], 0, 1)),
         ),
         axis=-1,
@@ -638,14 +663,34 @@ def imperial_wristcam_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str,
 
 
 def iamlab_pick_insert_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
-    import tensorflow_graphics.geometry.transformation as tft
+    def quat_to_euler_xyz(quat_xyzw: tf.Tensor) -> tf.Tensor:
+        x, y, z, w = (
+            quat_xyzw[:, 0],
+            quat_xyzw[:, 1],
+            quat_xyzw[:, 2],
+            quat_xyzw[:, 3],
+        )
+
+        t0 = 2.0 * (w * x + y * z)
+        t1 = 1.0 - 2.0 * (x * x + y * y)
+        roll = tf.atan2(t0, t1)
+
+        t2 = 2.0 * (w * y - z * x)
+        t2 = tf.clip_by_value(t2, -1.0, 1.0)
+        pitch = tf.asin(t2)
+
+        t3 = 2.0 * (w * z + x * y)
+        t4 = 1.0 - 2.0 * (y * y + z * z)
+        yaw = tf.atan2(t3, t4)
+
+        return tf.stack([roll, pitch, yaw], axis=-1)
 
     trajectory["observation"]["joint_state"] = trajectory["observation"]["state"][:, :7]
     trajectory["observation"]["gripper_state"] = trajectory["observation"]["state"][:, 7:8]
     trajectory["action"] = tf.concat(
         (
             trajectory["action"][:, :3],
-            tft.euler.from_quaternion(trajectory["action"][:, 3:7]),
+            quat_to_euler_xyz(trajectory["action"][:, 3:7]),
             trajectory["action"][:, 7:8],
         ),
         axis=-1,
@@ -699,12 +744,32 @@ def berkeley_fanuc_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, An
 
 
 def cmu_playing_with_food_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
-    import tensorflow_graphics.geometry.transformation as tft
+    def quat_to_euler_xyz(quat_xyzw: tf.Tensor) -> tf.Tensor:
+        x, y, z, w = (
+            quat_xyzw[:, 0],
+            quat_xyzw[:, 1],
+            quat_xyzw[:, 2],
+            quat_xyzw[:, 3],
+        )
+
+        t0 = 2.0 * (w * x + y * z)
+        t1 = 1.0 - 2.0 * (x * x + y * y)
+        roll = tf.atan2(t0, t1)
+
+        t2 = 2.0 * (w * y - z * x)
+        t2 = tf.clip_by_value(t2, -1.0, 1.0)
+        pitch = tf.asin(t2)
+
+        t3 = 2.0 * (w * z + x * y)
+        t4 = 1.0 - 2.0 * (y * y + z * z)
+        yaw = tf.atan2(t3, t4)
+
+        return tf.stack([roll, pitch, yaw], axis=-1)
 
     trajectory["action"] = tf.concat(
         (
             trajectory["action"][:, :3],
-            tft.euler.from_quaternion(trajectory["action"][:, 3:7]),
+            quat_to_euler_xyz(trajectory["action"][:, 3:7]),
             trajectory["action"][:, -1:],
         ),
         axis=-1,
