@@ -1,0 +1,45 @@
+{
+  "name": "openvla-oft (dgx)",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+
+  "workspaceFolder": "/workspace/openvla-oft",
+
+  "runArgs": [
+    "--privileged",
+    "--gpus", "all",
+    "--net=host",
+    "--ipc=host",
+    "--ulimit", "memlock=-1",
+    "--ulimit", "stack=67108864",
+    "--shm-size=16g",
+    "--volume", "/dev/bus/usb:/dev/bus/usb"
+  ],
+
+  "containerEnv": {
+    "MUJOCO_GL": "egl",
+    "HF_HOME": "/cache/hf",
+    "WANDB_DIR": "/runs/wandb"
+  },
+
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace/openvla-oft,type=bind",
+    "source=/home/${localEnv:USER}/.cache/huggingface,target=/cache/hf,type=bind",
+    "source=/home/${localEnv:USER}/openvla-oft-runs,target=/runs,type=bind",
+    "source=/home/${localEnv:USER}/datasets/rlds,target=/datasets/rlds,type=bind",
+    "source=/home/${localEnv:USER}/datasets/libero,target=/datasets/libero,type=bind"
+  ],
+
+  "remoteUser": "root",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+      ]
+    }
+  }
+}
